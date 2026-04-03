@@ -39,13 +39,21 @@ class SharedMemoryArrayMetadata:
     """Closes and unlinks the shared memory referred to by this instance."""
     shm = shared_memory.SharedMemory(self.name)
     shm.close()
-    shm.unlink()
+    try:
+      shm.unlink()
+    except FileNotFoundError:
+      # Shared memory may already be unlinked by another process/object.
+      pass
 
 
 def _del_shm(shm: shared_memory.SharedMemory, unlink: bool) -> None:
   shm.close()
   if unlink:
-    shm.unlink()
+    try:
+      shm.unlink()
+    except FileNotFoundError:
+      # Another owner/process may have already unlinked this shared memory.
+      pass
 
 
 class SharedMemoryArray(np.ndarray):
